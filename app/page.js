@@ -26,6 +26,7 @@ export default function Home() {
       {status === "authenticated" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <p>{session.user.name || session.user.email}님 환영합니다.</p>
+          <Link href="/dub">더빙 시작하기</Link>
           <button onClick={() => signOut()} style={{ padding: "0.4rem 0.8rem" }}>
             로그아웃
           </button>

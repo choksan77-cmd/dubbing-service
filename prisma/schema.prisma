@@ -13,4 +13,38 @@ model User {
   name         String?
   passwordHash String
   createdAt    DateTime @default(now())
+  dubJobs      DubJob[]
+}
+
+enum DubJobStatus {
+  pending
+  downloading
+  transcribing
+  translating
+  dubbing
+  muxing
+  done
+  failed
+}
+
+enum DubJobSourceType {
+  upload
+  youtube
+}
+
+model DubJob {
+  id                  String           @id @default(cuid())
+  userId              String
+  user                User             @relation(fields: [userId], references: [id])
+  sourceType          DubJobSourceType
+  sourceUrl           String?
+  originalFilename    String?
+  targetLanguage      String
+  status              DubJobStatus     @default(pending)
+  transcript          Json?
+  translatedTranscript Json?
+  errorMessage        String?
+  outputPath          String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 }
