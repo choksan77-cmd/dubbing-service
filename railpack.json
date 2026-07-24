@@ -1,0 +1,4 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": ["...", "python3", "python-is-python3"]
+}
