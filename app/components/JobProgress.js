@@ -11,7 +11,10 @@ const STEPS = [
   { key: "done", label: "완료" },
 ];
 
-export default function JobProgress({ status, errorMessage }) {
+export default function JobProgress({ status, errorMessage, progressCurrent, progressTotal }) {
+  const hasProgress =
+    typeof progressCurrent === "number" && typeof progressTotal === "number" && progressTotal > 0;
+  const percent = hasProgress ? Math.min(100, Math.round((progressCurrent / progressTotal) * 100)) : null;
   if (status === "failed") {
     return (
       <div className={styles.wrap}>
@@ -50,7 +53,10 @@ export default function JobProgress({ status, errorMessage }) {
           return (
             <div key={step.key} className={styles.step}>
               <div className={`${styles.dot} ${dotClass}`} />
-              <span className={labelClass}>{step.label}</span>
+              <span className={labelClass}>
+                {step.label}
+                {state === "active" && hasProgress ? ` (${progressCurrent}/${progressTotal}, ${percent}%)` : ""}
+              </span>
             </div>
           );
         })}

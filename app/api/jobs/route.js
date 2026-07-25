@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
-import { runTranscribeAndTranslate, jobDir } from "../../../lib/pipeline";
+import {
+  runTranscribeAndTranslate,
+  jobDir,
+  getMediaDuration,
+  splitVideoIntoChunks,
+  CHUNK_SECONDS,
+} from "../../../lib/pipeline";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,9 +19,11 @@ export async function GET() {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
+  const isAdmin = session.user.role === "admin";
   const jobs = await prisma.dubJob.findMany({
-    where: { userId: session.user.id },
+    where: isAdmin ? {} : { userId: session.user.id },
     orderBy: { createdAt: "desc" },
+    include: isAdmin ? { user: { select: { email: true, name: true } } } : undefined,
   });
 
   return NextResponse.json(
@@ -29,6 +38,11 @@ export async function GET() {
       createdAt: job.createdAt,
       hasOutput: !!job.outputPath,
       hasSubtitles: !!job.subtitlesPath,
+      hasSource: fs.existsSync(path.join(jobDir(job.id), "source.mp4")),
+      progressCurrent: job.progressCurrent,
+      progressTotal: job.progressTotal,
+      ownerEmail: isAdmin ? job.user?.email : undefined,
+      ownerName: isAdmin ? job.user?.name : undefined,
     }))
   );
 }
@@ -74,6 +88,53 @@ export async function POST(request) {
     return NextResponse.json({ error: "번역할 언어를 선택해주세요." }, { status: 400 });
   }
 
+  // Long uploads get split into fixed-length pieces up front, each becoming
+  // its own independent job (no re-stitching afterward) — sidesteps
+  // Whisper's 25MB audio upload limit for long videos and keeps every
+  // per-job pipeline call (translation chunking, TTS, ffmpeg) working on a
+  // duration it was already built and tested for.
+  if (fileBuffer) {
+    const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), "dubbing-upload-"));
+    try {
+      const stagingPath = path.join(stagingDir, originalFilename);
+      fs.writeFileSync(stagingPath, fileBuffer);
+
+      const duration = await getMediaDuration(stagingPath);
+      const chunkPaths =
+        duration > CHUNK_SECONDS ? await splitVideoIntoChunks(stagingPath, stagingDir) : [stagingPath];
+
+      const ext = path.extname(originalFilename) || ".mp4";
+      const base = path.basename(originalFilename, ext);
+      const ids = [];
+
+      for (let i = 0; i < chunkPaths.length; i++) {
+        const chunkFilename =
+          chunkPaths.length > 1 ? `${base} (${i + 1}-${chunkPaths.length})${ext}` : originalFilename;
+
+        const job = await prisma.dubJob.create({
+          data: {
+            userId: session.user.id,
+            sourceType,
+            sourceUrl: null,
+            originalFilename: chunkFilename,
+            targetLanguage,
+          },
+        });
+
+        const dir = jobDir(job.id);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.copyFileSync(chunkPaths[i], path.join(dir, chunkFilename));
+
+        runTranscribeAndTranslate(job.id);
+        ids.push(job.id);
+      }
+
+      return NextResponse.json({ ids, id: ids[0], chunked: ids.length > 1 });
+    } finally {
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+    }
+  }
+
   const job = await prisma.dubJob.create({
     data: {
       userId: session.user.id,
@@ -84,13 +145,7 @@ export async function POST(request) {
     },
   });
 
-  if (fileBuffer) {
-    const dir = jobDir(job.id);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, originalFilename), fileBuffer);
-  }
-
   runTranscribeAndTranslate(job.id);
 
-  return NextResponse.json({ id: job.id });
+  return NextResponse.json({ id: job.id, ids: [job.id] });
 }

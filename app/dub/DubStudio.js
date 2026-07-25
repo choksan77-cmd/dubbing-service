@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import JobProgress from "../components/JobProgress";
 import Timeline from "./Timeline";
@@ -30,6 +30,7 @@ const LANGUAGES = [
 export default function DubStudio() {
   const { status: sessionStatus } = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [inputMode, setInputMode] = useState("upload");
   const [file, setFile] = useState(null);
@@ -143,6 +144,14 @@ export default function DubStudio() {
       if (!res.ok) {
         setError(data.error || "요청에 실패했습니다.");
         setSubmitting(false);
+        return;
+      }
+
+      if (data.chunked) {
+        // Long upload was split into several independent jobs — there's no
+        // single job to follow here, so hand off to the history list where
+        // each piece shows its own progress.
+        router.push("/history");
         return;
       }
 
@@ -331,7 +340,12 @@ export default function DubStudio() {
 
       {job && (
         <div className={styles.jobBox}>
-          <JobProgress status={job.status} errorMessage={job.errorMessage} />
+          <JobProgress
+            status={job.status}
+            errorMessage={job.errorMessage}
+            progressCurrent={job.progressCurrent}
+            progressTotal={job.progressTotal}
+          />
 
           {job.status === "reviewing" && (
             <div className={styles.editor}>
@@ -346,6 +360,7 @@ export default function DubStudio() {
                     onTimeUpdate={handleTimeUpdate}
                   />
                   {activeCaption && <div className={styles.captionOverlay}>{activeCaption}</div>}
+                  <div className={styles.previewBadge}>미리보기 원본 · 블러/자막 적용 전</div>
                 </div>
               )}
 

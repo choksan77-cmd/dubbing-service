@@ -12,6 +12,7 @@ model User {
   email        String   @unique
   name         String?
   passwordHash String
+  role         String   @default("user")
   createdAt    DateTime @default(now())
   dubJobs      DubJob[]
 }
@@ -48,6 +49,8 @@ model DubJob {
   errorMessage        String?
   outputPath          String?
   subtitlesPath       String?
+  progressCurrent     Int?
+  progressTotal       Int?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 }

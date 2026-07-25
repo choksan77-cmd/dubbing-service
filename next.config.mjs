@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     serverComponentsExternalPackages: ["ffmpeg-static", "yt-dlp-exec"],
+    instrumentationHook: true,
   },
 };
 

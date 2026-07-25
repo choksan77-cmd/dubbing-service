@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import fs from "fs";
-import { authOptions } from "../../../../lib/auth";
+import { authOptions, canViewJob } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { jobDir } from "../../../../lib/pipeline";
 import { DEFAULT_VOICE, isValidVoice } from "../../../../lib/voices";
@@ -15,7 +15,7 @@ export async function GET(request, { params }) {
   }
 
   const job = await prisma.dubJob.findUnique({ where: { id: params.id } });
-  if (!job || job.userId !== session.user.id) {
+  if (!job || !canViewJob(job, session)) {
     return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
   }
 
@@ -28,6 +28,8 @@ export async function GET(request, { params }) {
     hasOutput: !!job.outputPath,
     hasSubtitles: !!job.subtitlesPath,
     hasSource: fs.existsSync(`${jobDir(job.id)}/source.mp4`),
+    progressCurrent: job.progressCurrent,
+    progressTotal: job.progressTotal,
   });
 }
 

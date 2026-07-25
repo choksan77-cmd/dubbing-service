@@ -80,6 +80,20 @@
   position: relative;
 }
 
+.previewBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.65);
+  color: #fde68a;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
 .captionOverlay {
   position: absolute;
   left: 50%;

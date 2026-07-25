@@ -86,12 +86,26 @@ export default function HistoryPage() {
               <div className={styles.cardHeader}>
                 <span className={styles.jobTitle}>{jobTitle(job)}</span>
                 <span className={styles.meta}>
+                  {job.ownerEmail && <>{job.ownerName || job.ownerEmail} · </>}
                   {SOURCE_LABELS[job.sourceType]} · {job.targetLanguage} ·{" "}
                   {new Date(job.createdAt).toLocaleString("ko-KR")}
                 </span>
               </div>
 
-              <JobProgress status={job.status} errorMessage={job.errorMessage} />
+              <JobProgress
+                status={job.status}
+                errorMessage={job.errorMessage}
+                progressCurrent={job.progressCurrent}
+                progressTotal={job.progressTotal}
+              />
+
+              {job.hasSource && (
+                <p style={{ textAlign: "center" }}>
+                  <a href={`/api/jobs/${job.id}/source`} download>
+                    분할된 원본 다운로드
+                  </a>
+                </p>
+              )}
 
               {job.status === "reviewing" && (
                 <p style={{ textAlign: "center" }}>
