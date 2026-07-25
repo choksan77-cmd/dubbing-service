@@ -5,14 +5,18 @@ import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import JobProgress from "../components/JobProgress";
-import { VOICE_CATEGORIES, DEFAULT_VOICE } from "../../lib/voices";
-import { EMOTIONS, DEFAULT_EMOTION } from "../../lib/emotions";
+import Timeline from "./Timeline";
+import SegmentFields from "./SegmentFields";
+import CharacterPanel from "./CharacterPanel";
+import { DEFAULT_VOICE } from "../../lib/voices";
+import { DEFAULT_EMOTION } from "../../lib/emotions";
+import { DEFAULT_VOICE_STYLE } from "../../lib/voiceStyles";
 import styles from "./DubStudio.module.css";
 
 const CHARACTER_COLORS = ["#8b5cf6", "#34d399", "#f59e0b", "#ec4899", "#38bdf8", "#f87171"];
 
 function defaultCharacters() {
-  return [{ id: "c1", name: "화자 1", voice: DEFAULT_VOICE }];
+  return [{ id: "c1", name: "화자 1", voice: DEFAULT_VOICE, style: DEFAULT_VOICE_STYLE }];
 }
 
 const LANGUAGES = [
@@ -22,13 +26,6 @@ const LANGUAGES = [
   { value: "Chinese", label: "중국어" },
   { value: "Spanish", label: "스페인어" },
 ];
-
-function formatTime(seconds) {
-  const total = Math.max(0, Math.round(seconds || 0));
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
 
 export default function DubStudio() {
   const { status: sessionStatus } = useSession();
@@ -44,12 +41,17 @@ export default function DubStudio() {
 
   const [segments, setSegments] = useState([]);
   const [characters, setCharacters] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
+  const [reopenError, setReopenError] = useState("");
 
   const pollRef = useRef(null);
   const segmentsInitRef = useRef(null);
   const resumeAttemptedRef = useRef(false);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -106,6 +108,7 @@ export default function DubStudio() {
           emotion: s.emotion || DEFAULT_EMOTION,
         }))
       );
+      setSelectedIndex(0);
       segmentsInitRef.current = job.id;
     }
   }, [job]);
@@ -156,9 +159,19 @@ export default function DubStudio() {
     setSegments((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   }
 
+  function selectSegment(i) {
+    setSelectedIndex(i);
+    if (videoRef.current && segments[i]) {
+      videoRef.current.currentTime = segments[i].start;
+    }
+  }
+
   function addCharacter() {
     const id = crypto.randomUUID();
-    setCharacters((prev) => [...prev, { id, name: `화자 ${prev.length + 1}`, voice: DEFAULT_VOICE }]);
+    setCharacters((prev) => [
+      ...prev,
+      { id, name: `화자 ${prev.length + 1}`, voice: DEFAULT_VOICE, style: DEFAULT_VOICE_STYLE },
+    ]);
   }
 
   function updateCharacter(id, patch) {
@@ -214,6 +227,17 @@ export default function DubStudio() {
     } finally {
       setGenerating(false);
     }
+  }
+
+  async function handleReopen() {
+    setReopenError("");
+    const res = await fetch(`/api/jobs/${job.id}/reopen`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setReopenError(data.error || "다시 수정하기에 실패했습니다.");
+      return;
+    }
+    setJob((prev) => ({ ...prev, status: "reviewing" }));
   }
 
   if (sessionStatus === "loading") return null;
@@ -291,112 +315,45 @@ export default function DubStudio() {
           <JobProgress status={job.status} errorMessage={job.errorMessage} />
 
           {job.status === "reviewing" && (
-            <div className={styles.studio}>
-              <p className={styles.studioHint}>
-                번역이 완료됐습니다. 대사를 수정하고 세그먼트별로 목소리를 골라주세요.
-              </p>
-
+            <div className={styles.editor}>
               {job.hasSource && (
-                <video src={`/api/jobs/${job.id}/source`} controls className={styles.video} />
+                <video
+                  ref={videoRef}
+                  src={`/api/jobs/${job.id}/source`}
+                  controls
+                  className={styles.video}
+                  onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
+                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                />
               )}
 
-              <div className={styles.characterSection}>
-                <h2 className={styles.sectionTitle}>등장인물</h2>
-                <div className={styles.characterList}>
-                  {characters.map((c, i) => (
-                    <div key={c.id} className={styles.characterRow}>
-                      <span
-                        className={styles.characterDot}
-                        style={{ background: CHARACTER_COLORS[i % CHARACTER_COLORS.length] }}
-                      />
-                      <input
-                        type="text"
-                        value={c.name}
-                        onChange={(e) => updateCharacter(c.id, { name: e.target.value })}
-                        className={styles.characterNameInput}
-                      />
-                      <select
-                        value={c.voice}
-                        onChange={(e) => updateCharacter(c.id, { voice: e.target.value })}
-                        className={styles.characterVoiceSelect}
-                      >
-                        {VOICE_CATEGORIES.map((category) => (
-                          <optgroup key={category.key} label={category.label}>
-                            {category.voices.map((v) => (
-                              <option key={v.id} value={v.id}>
-                                {v.label}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => deleteCharacter(c.id)}
-                        disabled={characters.length <= 1}
-                        className={`button ${styles.iconButton}`}
-                        title="삭제"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={addCharacter} className="button">
-                  + 등장인물 추가
-                </button>
-              </div>
+              <Timeline
+                segments={segments}
+                characters={characters}
+                colors={CHARACTER_COLORS}
+                duration={videoDuration}
+                currentTime={currentTime}
+                selectedIndex={selectedIndex}
+                onSelect={selectSegment}
+              />
 
-              <div className={styles.segmentList}>
-                {segments.map((seg, i) => {
-                  const characterIndex = characters.findIndex((c) => c.id === seg.characterId);
-                  return (
-                    <div key={i} className={`card ${styles.segmentCard}`}>
-                      <div className={styles.segmentMeta}>
-                        {formatTime(seg.start)} - {formatTime(seg.end)}
-                      </div>
-                      <p className={styles.originalText}>{seg.text}</p>
-                      <textarea
-                        value={seg.translatedText}
-                        onChange={(e) => updateSegment(i, { translatedText: e.target.value })}
-                        rows={2}
-                        className={styles.textarea}
-                      />
-                      <div className={styles.segmentSelectRow}>
-                        <div className={styles.characterSelectWrap}>
-                          <span
-                            className={styles.characterDot}
-                            style={{
-                              background:
-                                CHARACTER_COLORS[
-                                  (characterIndex < 0 ? 0 : characterIndex) % CHARACTER_COLORS.length
-                                ],
-                            }}
-                          />
-                          <select
-                            value={seg.characterId}
-                            onChange={(e) => updateSegment(i, { characterId: e.target.value })}
-                          >
-                            {characters.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <select
-                          value={seg.emotion}
-                          onChange={(e) => updateSegment(i, { emotion: e.target.value })}
-                        >
-                          {EMOTIONS.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className={styles.editorColumns}>
+                <CharacterPanel
+                  characters={characters}
+                  colors={CHARACTER_COLORS}
+                  onAdd={addCharacter}
+                  onUpdate={updateCharacter}
+                  onDelete={deleteCharacter}
+                />
+                <SegmentFields
+                  segment={segments[selectedIndex]}
+                  index={selectedIndex}
+                  total={segments.length}
+                  characters={characters}
+                  onChange={(patch) => updateSegment(selectedIndex, patch)}
+                  onPrev={() => selectSegment(Math.max(0, selectedIndex - 1))}
+                  onNext={() => selectSegment(Math.min(segments.length - 1, selectedIndex + 1))}
+                />
               </div>
 
               {generateError && <p className="errorText">{generateError}</p>}
@@ -420,6 +377,10 @@ export default function DubStudio() {
                   </a>
                 )}
               </div>
+              {reopenError && <p className="errorText">{reopenError}</p>}
+              <button onClick={handleReopen} className="button">
+                다시 수정하기
+              </button>
             </div>
           )}
         </div>

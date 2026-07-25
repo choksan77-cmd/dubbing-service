@@ -55,124 +55,38 @@
 
 .jobBox {
   width: 100%;
-  max-width: 680px;
+  max-width: 960px;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.studio {
+.editor {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   text-align: left;
 }
 
-.studioHint {
-  text-align: center;
-  color: var(--color-text-muted);
-}
-
 .video {
   width: 100%;
+  max-height: 480px;
   border-radius: var(--radius);
   border: 1px solid var(--color-border);
+  background: #000;
 }
 
-.characterSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+.editorColumns {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.4fr);
+  gap: var(--space-4);
+  align-items: start;
 }
 
-.sectionTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.characterList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.characterRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.characterDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.characterNameInput {
-  flex: 1;
-  min-width: 0;
-}
-
-.characterVoiceSelect {
-  flex: 1;
-  min-width: 0;
-}
-
-.iconButton {
-  padding: 0.5rem 0.7rem;
-  flex-shrink: 0;
-}
-
-.segmentList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.segmentCard {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.segmentSelectRow {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.segmentSelectRow > * {
-  flex: 1;
-  min-width: 0;
-}
-
-.characterSelectWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.characterSelectWrap select {
-  flex: 1;
-  min-width: 0;
-}
-
-.segmentMeta {
-  font-size: 0.75rem;
-  color: var(--color-text-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.originalText {
-  color: var(--color-text-muted);
-  font-style: italic;
-  font-size: 0.9rem;
-}
-
-.textarea {
-  resize: vertical;
+@media (max-width: 720px) {
+  .editorColumns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .doneBlock {

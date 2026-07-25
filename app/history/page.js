@@ -111,6 +111,7 @@ export default function HistoryPage() {
                       자막 다운로드 (SRT)
                     </a>
                   )}
+                  <Link href={`/dub?job=${job.id}`}>다시 수정하기</Link>
                 </div>
               )}
             </div>

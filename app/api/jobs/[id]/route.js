@@ -6,6 +6,7 @@ import { prisma } from "../../../../lib/prisma";
 import { jobDir } from "../../../../lib/pipeline";
 import { DEFAULT_VOICE, isValidVoice } from "../../../../lib/voices";
 import { DEFAULT_EMOTION, isValidEmotion } from "../../../../lib/emotions";
+import { DEFAULT_VOICE_STYLE, isValidVoiceStyle } from "../../../../lib/voiceStyles";
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -61,6 +62,7 @@ export async function PATCH(request, { params }) {
     id: String(c?.id || ""),
     name: typeof c?.name === "string" && c.name.trim() ? c.name.trim() : "화자",
     voice: isValidVoice(c?.voice) ? c.voice : DEFAULT_VOICE,
+    style: isValidVoiceStyle(c?.style) ? c.style : DEFAULT_VOICE_STYLE,
   }));
   const characterIds = new Set(characters.map((c) => c.id));
 

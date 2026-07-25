@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import fs from "fs";
-import { Readable } from "stream";
 import { authOptions } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
+import { streamVideoFile } from "../../../../../lib/streamVideo";
 
 export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -16,14 +15,5 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
   }
 
-  const stat = fs.statSync(job.outputPath);
-  const stream = fs.createReadStream(job.outputPath);
-
-  return new NextResponse(Readable.toWeb(stream), {
-    headers: {
-      "Content-Type": "video/mp4",
-      "Content-Length": stat.size.toString(),
-      "Content-Disposition": `inline; filename="dubbed-${job.id}.mp4"`,
-    },
-  });
+  return streamVideoFile(request, job.outputPath, `dubbed-${job.id}.mp4`);
 }
