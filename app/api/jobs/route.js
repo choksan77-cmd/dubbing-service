@@ -6,6 +6,33 @@ import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { runPipeline, jobDir } from "../../../lib/pipeline";
 
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
+
+  const jobs = await prisma.dubJob.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(
+    jobs.map((job) => ({
+      id: job.id,
+      status: job.status,
+      sourceType: job.sourceType,
+      originalFilename: job.originalFilename,
+      sourceUrl: job.sourceUrl,
+      targetLanguage: job.targetLanguage,
+      errorMessage: job.errorMessage,
+      createdAt: job.createdAt,
+      hasOutput: !!job.outputPath,
+      hasSubtitles: !!job.subtitlesPath,
+    }))
+  );
+}
+
 export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {

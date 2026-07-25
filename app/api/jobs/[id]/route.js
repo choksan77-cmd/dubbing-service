@@ -20,5 +20,6 @@ export async function GET(request, { params }) {
     errorMessage: job.errorMessage,
     translatedTranscript: job.translatedTranscript,
     hasOutput: !!job.outputPath,
+    hasSubtitles: !!job.subtitlesPath,
   });
 }

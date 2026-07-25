@@ -3,17 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-
-const STATUS_LABELS = {
-  pending: "대기 중",
-  downloading: "영상 가져오는 중",
-  transcribing: "음성 인식 중",
-  translating: "번역 중",
-  dubbing: "더빙 음성 생성 중",
-  muxing: "영상에 합성 중",
-  done: "완료",
-  failed: "실패",
-};
+import JobProgress from "../components/JobProgress";
 
 const LANGUAGES = [
   { value: "English", label: "영어" },
@@ -48,7 +38,7 @@ export default function DubPage() {
       if (data.status === "done" || data.status === "failed") {
         clearInterval(pollRef.current);
       }
-    }, 3000);
+    }, 2000);
   }
 
   async function handleSubmit(e) {
@@ -161,10 +151,7 @@ export default function DubPage() {
 
       {job && (
         <div style={styles.jobBox}>
-          <p>상태: {STATUS_LABELS[job.status] || job.status}</p>
-          {job.status === "failed" && (
-            <p style={{ color: "red" }}>{job.errorMessage}</p>
-          )}
+          <JobProgress status={job.status} errorMessage={job.errorMessage} />
           {job.status === "done" && job.hasOutput && (
             <div>
               <video
@@ -177,6 +164,13 @@ export default function DubPage() {
                   더빙된 영상 다운로드
                 </a>
               </p>
+              {job.hasSubtitles && (
+                <p>
+                  <a href={`/api/jobs/${job.id}/srt`} download>
+                    자막 다운로드 (SRT)
+                  </a>
+                </p>
+              )}
             </div>
           )}
         </div>

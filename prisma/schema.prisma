@@ -45,6 +45,7 @@ model DubJob {
   translatedTranscript Json?
   errorMessage        String?
   outputPath          String?
+  subtitlesPath       String?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 }
