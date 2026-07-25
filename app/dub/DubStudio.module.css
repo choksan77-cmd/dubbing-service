@@ -1,0 +1,120 @@
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.tab {
+  padding: 0.5rem 1.1rem;
+  border-radius: calc(var(--radius) - 4px);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.tabActive {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 420px;
+}
+
+.fileInputWrap {
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.jobBox {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.studio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: left;
+}
+
+.studioHint {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.video {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.segmentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.segmentCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.segmentMeta {
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.originalText {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.doneBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.downloadLinks {
+  display: flex;
+  gap: var(--space-4);
+}

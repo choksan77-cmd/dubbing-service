@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import JobProgress from "../components/JobProgress";
+import styles from "./history.module.css";
 
 const SOURCE_LABELS = {
   upload: "파일 업로드",
@@ -58,7 +59,7 @@ export default function HistoryPage() {
 
   if (sessionStatus === "unauthenticated") {
     return (
-      <main style={styles.main}>
+      <main className="page pageCentered">
         <p>이 기능을 사용하려면 로그인이 필요합니다.</p>
         <Link href="/login">로그인하러 가기</Link>
       </main>
@@ -66,25 +67,25 @@ export default function HistoryPage() {
   }
 
   return (
-    <main style={styles.main}>
-      <h1>더빙 기록</h1>
-      <p>
+    <main className="page">
+      <div className={styles.header}>
+        <h1 className={styles.title}>더빙 기록</h1>
         <Link href="/dub">새 더빙 시작하기</Link>
-      </p>
+      </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="errorText">{error}</p>}
 
       {jobs === null ? (
-        <p>불러오는 중...</p>
+        <p className={styles.empty}>불러오는 중...</p>
       ) : jobs.length === 0 ? (
-        <p>아직 더빙한 영상이 없습니다.</p>
+        <p className={styles.empty}>아직 더빙한 영상이 없습니다.</p>
       ) : (
-        <div style={styles.list}>
+        <div className={styles.list}>
           {jobs.map((job) => (
-            <div key={job.id} style={styles.card}>
-              <div style={styles.cardHeader}>
-                <span style={styles.title}>{jobTitle(job)}</span>
-                <span style={styles.meta}>
+            <div key={job.id} className={`card ${styles.jobCard}`}>
+              <div className={styles.cardHeader}>
+                <span className={styles.jobTitle}>{jobTitle(job)}</span>
+                <span className={styles.meta}>
                   {SOURCE_LABELS[job.sourceType]} · {job.targetLanguage} ·{" "}
                   {new Date(job.createdAt).toLocaleString("ko-KR")}
                 </span>
@@ -93,13 +94,13 @@ export default function HistoryPage() {
               <JobProgress status={job.status} errorMessage={job.errorMessage} />
 
               {job.status === "reviewing" && (
-                <p>
+                <p style={{ textAlign: "center" }}>
                   <Link href={`/dub?job=${job.id}`}>검토/수정하기</Link>
                 </p>
               )}
 
               {job.status === "done" && (
-                <div style={styles.links}>
+                <div className={styles.links}>
                   {job.hasOutput && (
                     <a href={`/api/jobs/${job.id}/video`} download>
                       영상 다운로드
@@ -119,48 +120,3 @@ export default function HistoryPage() {
     </main>
   );
 }
-
-const styles = {
-  main: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "1.5rem",
-    fontFamily: "sans-serif",
-    padding: "3rem 2rem",
-  },
-  list: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    width: "100%",
-    maxWidth: "600px",
-  },
-  card: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    padding: "1rem",
-  },
-  cardHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.15rem",
-  },
-  title: {
-    fontWeight: "bold",
-    wordBreak: "break-all",
-  },
-  meta: {
-    fontSize: "0.8rem",
-    color: "#777",
-  },
-  links: {
-    display: "flex",
-    gap: "1rem",
-    justifyContent: "center",
-  },
-};

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import styles from "../components/auth.module.css";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -40,61 +41,40 @@ export default function SignupPage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "1rem",
-        fontFamily: "sans-serif",
-        padding: "2rem",
-      }}
-    >
-      <h1>회원가입</h1>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.75rem",
-          width: "100%",
-          maxWidth: "320px",
-        }}
-      >
-        <input
-          type="text"
-          placeholder="이름 (선택)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ padding: "0.5rem" }}
-        />
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: "0.5rem" }}
-        />
-        <input
-          type="password"
-          placeholder="비밀번호 (8자 이상)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          style={{ padding: "0.5rem" }}
-        />
-        {error && <p style={{ color: "red", fontSize: "0.9rem" }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ padding: "0.5rem" }}>
-          {loading ? "가입 중..." : "회원가입"}
-        </button>
-      </form>
-      <p style={{ fontSize: "0.9rem" }}>
-        이미 계정이 있으신가요? <Link href="/login">로그인</Link>
-      </p>
+    <main className="page pageCentered">
+      <div className={`card ${styles.wrap}`}>
+        <h1 className={styles.title}>회원가입</h1>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <input
+            type="text"
+            placeholder="이름 (선택)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            type="email"
+            placeholder="이메일"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="비밀번호 (8자 이상)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          {error && <p className="errorText">{error}</p>}
+          <button type="submit" disabled={loading} className="button buttonPrimary">
+            {loading ? "가입 중..." : "회원가입"}
+          </button>
+        </form>
+        <p className={styles.footer}>
+          이미 계정이 있으신가요? <Link href="/login">로그인</Link>
+        </p>
+      </div>
     </main>
   );
 }

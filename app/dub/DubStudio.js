@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import JobProgress from "../components/JobProgress";
 import { VOICE_CATEGORIES } from "../../lib/voices";
+import styles from "./DubStudio.module.css";
 
 const LANGUAGES = [
   { value: "English", label: "영어" },
@@ -176,7 +177,7 @@ export default function DubStudio() {
 
   if (sessionStatus === "unauthenticated") {
     return (
-      <main style={styles.main}>
+      <main className="page pageCentered">
         <p>이 기능을 사용하려면 로그인이 필요합니다.</p>
         <Link href="/login">로그인하러 가기</Link>
       </main>
@@ -184,48 +185,48 @@ export default function DubStudio() {
   }
 
   return (
-    <main style={styles.main}>
-      <h1>더빙 스튜디오</h1>
+    <main className="page">
+      <div className={styles.header}>
+        <h1 className={styles.title}>더빙 스튜디오</h1>
+        {!job && <p className={styles.subtitle}>영상을 올리면 번역과 목소리를 직접 다듬을 수 있어요.</p>}
+      </div>
 
       {!job && (
         <>
-          <div style={{ display: "flex", gap: "1rem" }}>
+          <div className={styles.tabs}>
             <button
               onClick={() => setInputMode("upload")}
-              style={inputMode === "upload" ? styles.tabActive : styles.tab}
+              className={inputMode === "upload" ? `${styles.tab} ${styles.tabActive}` : styles.tab}
             >
               파일 업로드
             </button>
             <button
               onClick={() => setInputMode("youtube")}
-              style={inputMode === "youtube" ? styles.tabActive : styles.tab}
+              className={inputMode === "youtube" ? `${styles.tab} ${styles.tabActive}` : styles.tab}
             >
               YouTube URL
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form onSubmit={handleSubmit} className={styles.form}>
             {inputMode === "upload" ? (
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
+              <div className={styles.fileInputWrap}>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
+              </div>
             ) : (
               <input
                 type="url"
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
-                style={styles.input}
               />
             )}
 
-            <select
-              value={targetLanguage}
-              onChange={(e) => setTargetLanguage(e.target.value)}
-              style={styles.input}
-            >
+            <select value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)}>
               {LANGUAGES.map((lang) => (
                 <option key={lang.value} value={lang.value}>
                   {lang.label}로 더빙
@@ -233,9 +234,9 @@ export default function DubStudio() {
               ))}
             </select>
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p className="errorText">{error}</p>}
 
-            <button type="submit" disabled={submitting} style={styles.input}>
+            <button type="submit" disabled={submitting} className="button buttonPrimary">
               {submitting ? "제출 중..." : "더빙 시작"}
             </button>
           </form>
@@ -243,40 +244,35 @@ export default function DubStudio() {
       )}
 
       {job && (
-        <div style={styles.jobBox}>
+        <div className={styles.jobBox}>
           <JobProgress status={job.status} errorMessage={job.errorMessage} />
 
           {job.status === "reviewing" && (
-            <div style={styles.studio}>
-              <p style={styles.studioHint}>
+            <div className={styles.studio}>
+              <p className={styles.studioHint}>
                 번역이 완료됐습니다. 대사를 수정하고 세그먼트별로 목소리를 골라주세요.
               </p>
 
               {job.hasSource && (
-                <video
-                  src={`/api/jobs/${job.id}/source`}
-                  controls
-                  style={{ maxWidth: "100%", borderRadius: "8px" }}
-                />
+                <video src={`/api/jobs/${job.id}/source`} controls className={styles.video} />
               )}
 
-              <div style={styles.segmentList}>
+              <div className={styles.segmentList}>
                 {segments.map((seg, i) => (
-                  <div key={i} style={styles.segmentCard}>
-                    <div style={styles.segmentMeta}>
+                  <div key={i} className={`card ${styles.segmentCard}`}>
+                    <div className={styles.segmentMeta}>
                       {formatTime(seg.start)} - {formatTime(seg.end)}
                     </div>
-                    <p style={styles.originalText}>{seg.text}</p>
+                    <p className={styles.originalText}>{seg.text}</p>
                     <textarea
                       value={seg.translatedText}
                       onChange={(e) => updateSegment(i, { translatedText: e.target.value })}
                       rows={2}
-                      style={styles.textarea}
+                      className={styles.textarea}
                     />
                     <select
                       value={seg.voice}
                       onChange={(e) => updateSegment(i, { voice: e.target.value })}
-                      style={styles.input}
                     >
                       {VOICE_CATEGORIES.map((category) => (
                         <optgroup key={category.key} label={category.label}>
@@ -292,33 +288,27 @@ export default function DubStudio() {
                 ))}
               </div>
 
-              {generateError && <p style={{ color: "red" }}>{generateError}</p>}
+              {generateError && <p className="errorText">{generateError}</p>}
 
-              <button onClick={handleGenerate} disabled={generating} style={styles.generateButton}>
+              <button onClick={handleGenerate} disabled={generating} className="button buttonPrimary">
                 {generating ? "요청 중..." : "더빙 생성"}
               </button>
             </div>
           )}
 
           {job.status === "done" && job.hasOutput && (
-            <div>
-              <video
-                src={`/api/jobs/${job.id}/video`}
-                controls
-                style={{ maxWidth: "100%" }}
-              />
-              <p>
+            <div className={styles.doneBlock}>
+              <video src={`/api/jobs/${job.id}/video`} controls className={styles.video} />
+              <div className={styles.downloadLinks}>
                 <a href={`/api/jobs/${job.id}/video`} download>
                   더빙된 영상 다운로드
                 </a>
-              </p>
-              {job.hasSubtitles && (
-                <p>
+                {job.hasSubtitles && (
                   <a href={`/api/jobs/${job.id}/srt`} download>
                     자막 다운로드 (SRT)
                   </a>
-                </p>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -326,91 +316,3 @@ export default function DubStudio() {
     </main>
   );
 }
-
-const styles = {
-  main: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "1.5rem",
-    fontFamily: "sans-serif",
-    padding: "3rem 2rem",
-  },
-  tab: {
-    padding: "0.5rem 1rem",
-    background: "transparent",
-    border: "1px solid #ccc",
-  },
-  tabActive: {
-    padding: "0.5rem 1rem",
-    border: "1px solid #333",
-    fontWeight: "bold",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-    width: "100%",
-    maxWidth: "400px",
-  },
-  input: {
-    padding: "0.5rem",
-  },
-  jobBox: {
-    width: "100%",
-    maxWidth: "640px",
-    textAlign: "center",
-  },
-  studio: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    marginTop: "1.5rem",
-    textAlign: "left",
-  },
-  studioHint: {
-    textAlign: "center",
-    color: "#555",
-  },
-  segmentList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-  },
-  segmentCard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    padding: "1rem",
-    background: "#fafafa",
-  },
-  segmentMeta: {
-    fontSize: "0.75rem",
-    color: "#888",
-    fontVariantNumeric: "tabular-nums",
-  },
-  originalText: {
-    margin: 0,
-    color: "#999",
-    fontStyle: "italic",
-    fontSize: "0.9rem",
-  },
-  textarea: {
-    padding: "0.5rem",
-    fontFamily: "inherit",
-    fontSize: "0.95rem",
-    resize: "vertical",
-  },
-  generateButton: {
-    padding: "0.75rem",
-    fontWeight: "bold",
-    border: "1px solid #2f6f4f",
-    background: "#2f6f4f",
-    color: "#fff",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-};
