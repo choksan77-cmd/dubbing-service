@@ -79,6 +79,51 @@
   border: 1px solid var(--color-border);
 }
 
+.characterSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.characterList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.characterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.characterDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.characterNameInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.characterVoiceSelect {
+  flex: 1;
+  min-width: 0;
+}
+
+.iconButton {
+  padding: 0.5rem 0.7rem;
+  flex-shrink: 0;
+}
+
 .segmentList {
   display: flex;
   flex-direction: column;
@@ -89,6 +134,29 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.segmentSelectRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.segmentSelectRow > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.characterSelectWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.characterSelectWrap select {
+  flex: 1;
+  min-width: 0;
 }
 
 .segmentMeta {

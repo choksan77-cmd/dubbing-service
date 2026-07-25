@@ -44,6 +44,7 @@ model DubJob {
   status              DubJobStatus     @default(pending)
   transcript          Json?
   translatedTranscript Json?
+  characters          Json?
   errorMessage        String?
   outputPath          String?
   subtitlesPath       String?

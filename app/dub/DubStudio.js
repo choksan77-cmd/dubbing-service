@@ -5,8 +5,15 @@ import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import JobProgress from "../components/JobProgress";
-import { VOICE_CATEGORIES } from "../../lib/voices";
+import { VOICE_CATEGORIES, DEFAULT_VOICE } from "../../lib/voices";
+import { EMOTIONS, DEFAULT_EMOTION } from "../../lib/emotions";
 import styles from "./DubStudio.module.css";
+
+const CHARACTER_COLORS = ["#8b5cf6", "#34d399", "#f59e0b", "#ec4899", "#38bdf8", "#f87171"];
+
+function defaultCharacters() {
+  return [{ id: "c1", name: "화자 1", voice: DEFAULT_VOICE }];
+}
 
 const LANGUAGES = [
   { value: "English", label: "영어" },
@@ -36,6 +43,7 @@ export default function DubStudio() {
   const [job, setJob] = useState(null);
 
   const [segments, setSegments] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
 
@@ -81,12 +89,23 @@ export default function DubStudio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load the (possibly machine-translated) segments into local editable
-  // state once, the first time a job reaches "reviewing" — polling is
-  // stopped at that point, so this won't clobber in-progress edits.
+  // Load the (possibly machine-translated) segments + characters into local
+  // editable state once, the first time a job reaches "reviewing" — polling
+  // is stopped at that point, so this won't clobber in-progress edits.
+  // Defensive fallback: a job that reached "reviewing" before this feature
+  // shipped has no job.characters and segments without characterId/emotion —
+  // fill in sensible defaults rather than crash.
   useEffect(() => {
     if (job?.status === "reviewing" && segmentsInitRef.current !== job.id) {
-      setSegments((job.translatedTranscript || []).map((s) => ({ ...s })));
+      const initialCharacters = job.characters?.length ? job.characters : defaultCharacters();
+      setCharacters(initialCharacters);
+      setSegments(
+        (job.translatedTranscript || []).map((s) => ({
+          ...s,
+          characterId: s.characterId || initialCharacters[0].id,
+          emotion: s.emotion || DEFAULT_EMOTION,
+        }))
+      );
       segmentsInitRef.current = job.id;
     }
   }, [job]);
@@ -137,6 +156,25 @@ export default function DubStudio() {
     setSegments((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   }
 
+  function addCharacter() {
+    const id = crypto.randomUUID();
+    setCharacters((prev) => [...prev, { id, name: `화자 ${prev.length + 1}`, voice: DEFAULT_VOICE }]);
+  }
+
+  function updateCharacter(id, patch) {
+    setCharacters((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  }
+
+  function deleteCharacter(id) {
+    if (characters.length <= 1) return;
+    const remaining = characters.filter((c) => c.id !== id);
+    const fallbackId = remaining[0].id;
+    setCharacters(remaining);
+    setSegments((prev) =>
+      prev.map((s) => (s.characterId === id ? { ...s, characterId: fallbackId } : s))
+    );
+  }
+
   async function handleGenerate() {
     setGenerating(true);
     setGenerateError("");
@@ -146,7 +184,12 @@ export default function DubStudio() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          segments: segments.map((s) => ({ translatedText: s.translatedText, voice: s.voice })),
+          characters,
+          segments: segments.map((s) => ({
+            translatedText: s.translatedText,
+            characterId: s.characterId,
+            emotion: s.emotion,
+          })),
         }),
       });
       if (!patchRes.ok) {
@@ -257,35 +300,103 @@ export default function DubStudio() {
                 <video src={`/api/jobs/${job.id}/source`} controls className={styles.video} />
               )}
 
-              <div className={styles.segmentList}>
-                {segments.map((seg, i) => (
-                  <div key={i} className={`card ${styles.segmentCard}`}>
-                    <div className={styles.segmentMeta}>
-                      {formatTime(seg.start)} - {formatTime(seg.end)}
+              <div className={styles.characterSection}>
+                <h2 className={styles.sectionTitle}>등장인물</h2>
+                <div className={styles.characterList}>
+                  {characters.map((c, i) => (
+                    <div key={c.id} className={styles.characterRow}>
+                      <span
+                        className={styles.characterDot}
+                        style={{ background: CHARACTER_COLORS[i % CHARACTER_COLORS.length] }}
+                      />
+                      <input
+                        type="text"
+                        value={c.name}
+                        onChange={(e) => updateCharacter(c.id, { name: e.target.value })}
+                        className={styles.characterNameInput}
+                      />
+                      <select
+                        value={c.voice}
+                        onChange={(e) => updateCharacter(c.id, { voice: e.target.value })}
+                        className={styles.characterVoiceSelect}
+                      >
+                        {VOICE_CATEGORIES.map((category) => (
+                          <optgroup key={category.key} label={category.label}>
+                            {category.voices.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => deleteCharacter(c.id)}
+                        disabled={characters.length <= 1}
+                        className={`button ${styles.iconButton}`}
+                        title="삭제"
+                      >
+                        삭제
+                      </button>
                     </div>
-                    <p className={styles.originalText}>{seg.text}</p>
-                    <textarea
-                      value={seg.translatedText}
-                      onChange={(e) => updateSegment(i, { translatedText: e.target.value })}
-                      rows={2}
-                      className={styles.textarea}
-                    />
-                    <select
-                      value={seg.voice}
-                      onChange={(e) => updateSegment(i, { voice: e.target.value })}
-                    >
-                      {VOICE_CATEGORIES.map((category) => (
-                        <optgroup key={category.key} label={category.label}>
-                          {category.voices.map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.label}
+                  ))}
+                </div>
+                <button onClick={addCharacter} className="button">
+                  + 등장인물 추가
+                </button>
+              </div>
+
+              <div className={styles.segmentList}>
+                {segments.map((seg, i) => {
+                  const characterIndex = characters.findIndex((c) => c.id === seg.characterId);
+                  return (
+                    <div key={i} className={`card ${styles.segmentCard}`}>
+                      <div className={styles.segmentMeta}>
+                        {formatTime(seg.start)} - {formatTime(seg.end)}
+                      </div>
+                      <p className={styles.originalText}>{seg.text}</p>
+                      <textarea
+                        value={seg.translatedText}
+                        onChange={(e) => updateSegment(i, { translatedText: e.target.value })}
+                        rows={2}
+                        className={styles.textarea}
+                      />
+                      <div className={styles.segmentSelectRow}>
+                        <div className={styles.characterSelectWrap}>
+                          <span
+                            className={styles.characterDot}
+                            style={{
+                              background:
+                                CHARACTER_COLORS[
+                                  (characterIndex < 0 ? 0 : characterIndex) % CHARACTER_COLORS.length
+                                ],
+                            }}
+                          />
+                          <select
+                            value={seg.characterId}
+                            onChange={(e) => updateSegment(i, { characterId: e.target.value })}
+                          >
+                            {characters.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <select
+                          value={seg.emotion}
+                          onChange={(e) => updateSegment(i, { emotion: e.target.value })}
+                        >
+                          {EMOTIONS.map((e) => (
+                            <option key={e.id} value={e.id}>
+                              {e.label}
                             </option>
                           ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-                ))}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {generateError && <p className="errorText">{generateError}</p>}
