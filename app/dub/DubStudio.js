@@ -20,8 +20,8 @@ function defaultCharacters() {
 }
 
 const LANGUAGES = [
-  { value: "English", label: "영어" },
   { value: "Korean", label: "한국어" },
+  { value: "English", label: "영어" },
   { value: "Japanese", label: "일본어" },
   { value: "Chinese", label: "중국어" },
   { value: "Spanish", label: "스페인어" },
