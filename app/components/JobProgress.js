@@ -55,7 +55,7 @@ export default function JobProgress({ status, errorMessage, progressCurrent, pro
               <div className={`${styles.dot} ${dotClass}`} />
               <span className={labelClass}>
                 {step.label}
-                {state === "active" && hasProgress ? ` (${progressCurrent}/${progressTotal}, ${percent}%)` : ""}
+                {state === "active" && hasProgress ? ` (${percent}%)` : ""}
               </span>
             </div>
           );
