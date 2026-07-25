@@ -166,6 +166,19 @@ export default function DubStudio() {
     }
   }
 
+  // Keeps the edit panel in sync with wherever the video actually is —
+  // without this, scrubbing the native video controls (instead of clicking
+  // a timeline block) leaves the panel showing whatever was last clicked,
+  // which looks exactly like a mis-cast line even when the data is right.
+  function handleTimeUpdate(e) {
+    const t = e.currentTarget.currentTime;
+    setCurrentTime(t);
+    const idx = segments.findIndex((s) => t >= s.start && t < s.end);
+    if (idx !== -1 && idx !== selectedIndex) {
+      setSelectedIndex(idx);
+    }
+  }
+
   function addCharacter() {
     const id = crypto.randomUUID();
     setCharacters((prev) => [
@@ -323,7 +336,7 @@ export default function DubStudio() {
                   controls
                   className={styles.video}
                   onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
-                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                  onTimeUpdate={handleTimeUpdate}
                 />
               )}
 
