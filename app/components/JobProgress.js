@@ -26,7 +26,16 @@ export default function JobProgress({ status, errorMessage }) {
     );
   }
 
-  const currentIndex = status === "pending" ? -1 : STEPS.findIndex((s) => s.key === status);
+  // "reviewing" has no dot of its own — treat it as "everything up to
+  // dubbing is complete, nothing active yet" while the user edits the
+  // script/voices. Without this branch, findIndex returns -1 for
+  // "reviewing" and every dot would incorrectly show as pending.
+  const currentIndex =
+    status === "pending"
+      ? -1
+      : status === "reviewing"
+      ? STEPS.findIndex((s) => s.key === "dubbing")
+      : STEPS.findIndex((s) => s.key === status);
 
   return (
     <div style={styles.wrap}>

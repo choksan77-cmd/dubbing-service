@@ -31,7 +31,9 @@ export default function HistoryPage() {
       const data = await res.json();
       setJobs(data);
 
-      const hasInProgress = data.some((j) => j.status !== "done" && j.status !== "failed");
+      const hasInProgress = data.some(
+        (j) => j.status !== "done" && j.status !== "failed" && j.status !== "reviewing"
+      );
       if (!hasInProgress && pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
@@ -89,6 +91,12 @@ export default function HistoryPage() {
               </div>
 
               <JobProgress status={job.status} errorMessage={job.errorMessage} />
+
+              {job.status === "reviewing" && (
+                <p>
+                  <Link href={`/dub?job=${job.id}`}>검토/수정하기</Link>
+                </p>
+              )}
 
               {job.status === "done" && (
                 <div style={styles.links}>

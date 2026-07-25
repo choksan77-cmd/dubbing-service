@@ -21,6 +21,7 @@ enum DubJobStatus {
   downloading
   transcribing
   translating
+  reviewing
   dubbing
   muxing
   done

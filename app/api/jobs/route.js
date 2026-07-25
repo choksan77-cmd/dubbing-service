@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
-import { runPipeline, jobDir } from "../../../lib/pipeline";
+import { runTranscribeAndTranslate, jobDir } from "../../../lib/pipeline";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -90,7 +90,7 @@ export async function POST(request) {
     fs.writeFileSync(path.join(dir, originalFilename), fileBuffer);
   }
 
-  runPipeline(job.id);
+  runTranscribeAndTranslate(job.id);
 
   return NextResponse.json({ id: job.id });
 }
