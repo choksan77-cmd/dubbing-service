@@ -76,6 +76,27 @@
   background: #000;
 }
 
+.videoWrap {
+  position: relative;
+}
+
+.captionOverlay {
+  position: absolute;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  max-width: 88%;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: center;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
 .editorColumns {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.4fr);

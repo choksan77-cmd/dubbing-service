@@ -253,6 +253,12 @@ export default function DubStudio() {
     setJob((prev) => ({ ...prev, status: "reviewing" }));
   }
 
+  // Live caption for the review-stage preview (raw source video, not yet
+  // burned) — separate from selectedIndex, which intentionally holds onto
+  // the last-clicked segment during silent gaps for editing continuity.
+  // This must show nothing during a real gap, not the previous line.
+  const activeCaption = segments.find((s) => currentTime >= s.start && currentTime < s.end)?.translatedText || null;
+
   if (sessionStatus === "loading") return null;
 
   if (sessionStatus === "unauthenticated") {
@@ -330,14 +336,17 @@ export default function DubStudio() {
           {job.status === "reviewing" && (
             <div className={styles.editor}>
               {job.hasSource && (
-                <video
-                  ref={videoRef}
-                  src={`/api/jobs/${job.id}/source`}
-                  controls
-                  className={styles.video}
-                  onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
-                  onTimeUpdate={handleTimeUpdate}
-                />
+                <div className={styles.videoWrap}>
+                  <video
+                    ref={videoRef}
+                    src={`/api/jobs/${job.id}/source`}
+                    controls
+                    className={styles.video}
+                    onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
+                    onTimeUpdate={handleTimeUpdate}
+                  />
+                  {activeCaption && <div className={styles.captionOverlay}>{activeCaption}</div>}
+                </div>
               )}
 
               <Timeline
